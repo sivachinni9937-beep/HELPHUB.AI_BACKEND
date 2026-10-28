@@ -3,7 +3,7 @@
  * Runs both the FastAPI backend and Vite frontend concurrently.
  */
 
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
@@ -15,6 +15,36 @@ const backendDir = path.join(rootDir, 'backend');
 const frontendDir = path.join(rootDir, 'frontend');
 
 const isWin = process.platform === 'win32';
+
+/**
+ * Ensures ports 8000 and 5173 are freed before launching to avoid
+ * "Port in use" conflicts and automatic jumps to 5174.
+ */
+function freePort(port) {
+  if (isWin) {
+    try {
+      const output = execSync(`netstat -ano -p tcp | findstr :${port}`, {
+        encoding: 'utf-8',
+        stdio: ['ignore', 'pipe', 'ignore'],
+      });
+      const lines = output.trim().split('\n');
+      for (const line of lines) {
+        if (line.includes('LISTENING') && line.includes(`:${port}`)) {
+          const parts = line.trim().split(/\s+/);
+          const pid = parts[parts.length - 1];
+          if (pid && pid !== '0' && pid !== process.pid.toString()) {
+            try {
+              execSync(`taskkill /F /PID ${pid}`, { stdio: 'ignore' });
+            } catch {}
+          }
+        }
+      }
+    } catch {}
+  }
+}
+
+freePort(8000);
+freePort(5173);
 
 // 1. Locate Python executable in backend/.venv
 let pythonExe = isWin
@@ -61,10 +91,24 @@ function cleanExit(source = '') {
   setTimeout(() => process.exit(0), 200);
 }
 
-process.on('SIGINT', () => cleanExit('SIGINT'));
+if (process.stdin.isTTY) {
+  try {
+    process.stdin.setRawMode(true);
+    process.stdin.resume();
+    process.stdin.on('data', (chunk) => {
+      // 0x03 is Ctrl+C
+      if (chunk[0] === 3) {
+        cleanExit('Ctrl+C');
+      }
+    });
+  } catch {}
+} else {
+  process.on('SIGINT', () => cleanExit('SIGINT'));
+}
+
 process.on('SIGTERM', () => cleanExit('SIGTERM'));
 
-// 3. Spawn FastAPI Backend (watching only backend/app to avoid WatchFiles loop)
+// 3. Spawn FastAPI Backend (isolated process group on Windows to avoid reloader SIGINT propagation)
 console.log('\x1b[34m[BACKEND]\x1b[0m Starting FastAPI uvicorn server on port 8000...');
 const backendProcess = spawn(
   pythonExe,
@@ -80,6 +124,8 @@ const backendProcess = spawn(
     cwd: rootDir,
     stdio: ['ignore', 'pipe', 'pipe'],
     shell: false,
+    detached: isWin,
+    windowsHide: true,
     env: { ...process.env, PYTHONUNBUFFERED: '1' }
   }
 );

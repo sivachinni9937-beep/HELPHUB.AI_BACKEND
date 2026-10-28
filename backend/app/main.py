@@ -26,7 +26,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.VERSION,
-    description="Backend API service for HelpHub AI — Civic Problem Solver with Gemma 4 assistance.",
+    description="Backend API service for HelpHub AI — Community Problem Solver with Gemma 4 assistance.",
     docs_url="/docs",
     redoc_url="/redoc",
     lifespan=lifespan,
@@ -50,6 +50,7 @@ origins = settings.FRONTEND_ORIGINS if isinstance(settings.FRONTEND_ORIGINS, lis
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
