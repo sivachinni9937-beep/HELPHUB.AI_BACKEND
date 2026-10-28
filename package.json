@@ -5,6 +5,7 @@
   "description": "HelpHub AI — Community Problem Solver Full-Stack Platform",
   "type": "module",
   "scripts": {
+    "start": "cd backend && uvicorn app.main:app --host 0.0.0.0 --port ${PORT:-8000}",
     "dev": "node scripts/dev.js",
     "dev:all": "node scripts/dev.js",
     "dev:frontend": "npm --prefix frontend run dev",
