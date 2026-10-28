@@ -1,10 +1,13 @@
 # HelpHub AI — FastAPI Backend Service
 
 [![Live Backend](https://img.shields.io/badge/Render-Backend%20Live-brightgreen?logo=render)](https://helphub-ai-backend-1.onrender.com)
+[![Vercel Frontend](https://img.shields.io/badge/Vercel-Frontend%20Live-black?logo=vercel)](https://vercel.com/sivachinni9937-beep/helphub-ai-frontend/J3ybnr9AgmbqxVZ9yaLQpfeHPQML)
 [![API Docs](https://img.shields.io/badge/Swagger-API%20Docs-blue?logo=swagger)](https://helphub-ai-backend-1.onrender.com/docs)
 [![Health Status](https://img.shields.io/badge/Health%20Status-200%20OK-success)](https://helphub-ai-backend-1.onrender.com/api/health)
 
-### 🌐 Live Production Deployment
+### 🌐 Live Production Deployments
+- **Connected Frontend App**: [https://helphub-ai-frontend.vercel.app](https://helphub-ai-frontend.vercel.app)
+- **Vercel Deployment**: [https://vercel.com/sivachinni9937-beep/helphub-ai-frontend/J3ybnr9AgmbqxVZ9yaLQpfeHPQML](https://vercel.com/sivachinni9937-beep/helphub-ai-frontend/J3ybnr9AgmbqxVZ9yaLQpfeHPQML)
 - **Base API URL**: [https://helphub-ai-backend-1.onrender.com](https://helphub-ai-backend-1.onrender.com)
 - **Interactive OpenAPI / Swagger Documentation**: [https://helphub-ai-backend-1.onrender.com/docs](https://helphub-ai-backend-1.onrender.com/docs)
 - **Redoc Documentation**: [https://helphub-ai-backend-1.onrender.com/redoc](https://helphub-ai-backend-1.onrender.com/redoc)
@@ -38,3 +41,4 @@
 - **Database**: Supabase PostgreSQL with Row Level Security (RLS)
 - **AI Models**: Google Gemma 4 (via local Ollama & Google AI Studio Cloud)
 - **Deployment**: Render Web Service (`render.yaml` Blueprint & Dockerfile)
+
