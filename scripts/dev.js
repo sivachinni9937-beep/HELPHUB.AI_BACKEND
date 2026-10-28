@@ -153,18 +153,36 @@ backendProcess.on('error', (err) => {
   console.error('\x1b[31m[BACKEND FAILED]\x1b[0m Could not start backend:', err.message);
 });
 
-// 4. Spawn Frontend via direct Node to eliminate batch wrapper prompts and DEP0190
+// 4. Spawn Frontend with ignored stdin so background execution never triggers EOF exits
 console.log('\x1b[32m[FRONTEND]\x1b[0m Starting Vite development server on port 5173...\n');
 const frontendProcess = spawn(
   process.execPath,
-  [viteJs, '--host', '127.0.0.1', '--port', '5173'],
+  [viteJs, '--host', '127.0.0.1', '--port', '5173', '--strictPort'],
   {
     cwd: frontendDir,
-    stdio: 'inherit',
+    stdio: ['ignore', 'pipe', 'pipe'],
     shell: false
   }
 );
 processes.push(frontendProcess);
+
+frontendProcess.stdout.on('data', (data) => {
+  const lines = data.toString().trim().split('\n');
+  for (const line of lines) {
+    if (line.trim()) {
+      console.log(`\x1b[32m[FRONTEND]\x1b[0m ${line.trim()}`);
+    }
+  }
+});
+
+frontendProcess.stderr.on('data', (data) => {
+  const lines = data.toString().trim().split('\n');
+  for (const line of lines) {
+    if (line.trim()) {
+      console.error(`\x1b[31m[FRONTEND ERR]\x1b[0m ${line.trim()}`);
+    }
+  }
+});
 
 frontendProcess.on('error', (err) => {
   console.error('\x1b[31m[FRONTEND FAILED]\x1b[0m Could not start frontend:', err.message);
@@ -173,6 +191,5 @@ frontendProcess.on('error', (err) => {
 frontendProcess.on('exit', (code, signal) => {
   if (!isExiting && code !== 0 && code !== null) {
     console.error(`\x1b[31m[FRONTEND]\x1b[0m Exited with code ${code}`);
-    cleanExit('Frontend exited');
   }
 });
