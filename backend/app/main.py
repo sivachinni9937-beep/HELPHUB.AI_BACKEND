@@ -45,15 +45,16 @@ async def request_id_middleware(request: Request, call_next):
         request_id_ctx.reset(token)
 
 
-# CORS Middleware
+# CORS Middleware - Allow all origins and domains unconditionally
 origins = settings.FRONTEND_ORIGINS if isinstance(settings.FRONTEND_ORIGINS, list) else ["*"]
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_origin_regex=r"^https?://(localhost|127\.0\.0\.1)(:\d+)?$",
+    allow_origin_regex=r"^https?://.*$",  # Matches any HTTP/HTTPS domain while supporting credentials
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"],
 )
 
 # Global Validation Error Handler

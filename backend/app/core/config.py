@@ -31,13 +31,8 @@ class Settings(BaseSettings):
     AI_MAX_INPUT_CHARS: int = 5000
     AI_RATE_LIMIT_PER_MINUTE: int = 20
 
-    # CORS
-    FRONTEND_ORIGINS: Union[str, List[str]] = [
-        "http://localhost:5173",
-        "http://localhost:3000",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:3000",
-    ]
+    # CORS (Allow all origins by default)
+    FRONTEND_ORIGINS: Union[str, List[str]] = ["*"]
 
     # Application Mode
     DEMO_MODE: bool = True
