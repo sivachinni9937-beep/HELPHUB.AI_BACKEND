@@ -1,0 +1,28 @@
+{
+  "name": "helphub-ai",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HelpHub AI — Community Problem Solver Full-Stack Platform",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.js",
+    "dev:all": "node scripts/dev.js",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "dev:backend": "powershell -ExecutionPolicy Bypass -Command \"& backend/.venv/Scripts/uvicorn.exe app.main:app --app-dir backend --reload --host 127.0.0.1 --port 8000\"",
+    "build": "npm --prefix frontend run build",
+    "preview": "npm --prefix frontend run preview",
+    "test": "npm --prefix frontend run test",
+    "test:backend": "backend/.venv/Scripts/pytest.exe -o pythonpath=backend backend/tests",
+    "test:all": "npm run test && npm run test:backend"
+  },
+  "keywords": [
+    "community",
+    "civic-tech",
+    "helphub-ai",
+    "fastapi",
+    "react",
+    "gemma"
+  ],
+  "author": "HelpHub AI Team",
+  "license": "MIT"
+}
