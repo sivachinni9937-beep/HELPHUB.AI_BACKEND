@@ -2,6 +2,15 @@
 
 > **"Report a problem. Find a solution. Build a better community."**
 
+[![Live Backend](https://img.shields.io/badge/Render-Backend%20Live-brightgreen?logo=render)](https://helphub-ai-backend-1.onrender.com)
+[![API Docs](https://img.shields.io/badge/Swagger-API%20Docs-blue?logo=swagger)](https://helphub-ai-backend-1.onrender.com/docs)
+[![Health Status](https://img.shields.io/badge/Health%20Status-200%20OK-success)](https://helphub-ai-backend-1.onrender.com/api/health)
+
+### 🌐 Live Production Deployments
+- **Backend API URL**: [https://helphub-ai-backend-1.onrender.com](https://helphub-ai-backend-1.onrender.com)
+- **Interactive Swagger Documentation**: [https://helphub-ai-backend-1.onrender.com/docs](https://helphub-ai-backend-1.onrender.com/docs)
+- **API Health Telemetry**: [https://helphub-ai-backend-1.onrender.com/api/health](https://helphub-ai-backend-1.onrender.com/api/health)
+
 HelpHub AI is an open-source, full-stack social-impact platform where citizens, college students, NGOs, community organizations, and local volunteers collaborate to identify and resolve community problems:
 - **Sanitation and garbage accumulation** near public spaces and bus stops.
 - **Damaged roads and dangerous potholes**.
