@@ -13,3 +13,4 @@ services:
         value: production
       - key: DEMO_MODE
         value: false
+
