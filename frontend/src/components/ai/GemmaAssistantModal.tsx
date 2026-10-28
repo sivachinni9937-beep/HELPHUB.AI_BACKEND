@@ -28,8 +28,8 @@ export const GemmaAssistantModal: React.FC<GemmaAssistantModalProps> = ({
   const [error, setError] = useState<string | null>(null);
 
   const handleAnalyze = async () => {
-    if (!description.trim() || description.length < 10) {
-      setError('Please provide at least 10 characters describing the community problem.');
+    if (!description.trim() || description.length < 3) {
+      setError('Please provide at least 3 characters describing the community problem.');
       return;
     }
     setError(null);
@@ -77,7 +77,7 @@ export const GemmaAssistantModal: React.FC<GemmaAssistantModalProps> = ({
             className="w-full px-3.5 py-2.5 text-sm rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-teal-500 transition"
           />
           <div className="flex items-center justify-between text-xs text-slate-500">
-            <span>Minimum 10 characters</span>
+            <span>AI-assisted civic analysis</span>
             <div className="flex items-center gap-1.5">
               <span>Language:</span>
               <button

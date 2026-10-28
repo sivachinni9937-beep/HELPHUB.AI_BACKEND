@@ -16,9 +16,9 @@ router = APIRouter(prefix="/reports", tags=["Community Reports"])
 
 @router.get("", response_model=PaginatedResponse[ReportResponse])
 async def list_reports(
-    category: Optional[ReportCategory] = None,
-    status: Optional[ReportStatus] = None,
-    urgency: Optional[UrgencyLevel] = None,
+    category: Optional[str] = None,
+    status: Optional[str] = None,
+    urgency: Optional[str] = None,
     search: Optional[str] = None,
     page: int = Query(1, ge=1),
     page_size: int = Query(10, ge=1, le=50),
@@ -28,10 +28,31 @@ async def list_reports(
     Paginated list of community reports with multi-criteria filtering and search.
     Publicly accessible to guests and registered community members.
     """
+    valid_category = None
+    if category and category.strip().lower() not in ("all", "none", ""):
+        try:
+            valid_category = ReportCategory(category.strip().lower())
+        except ValueError:
+            pass
+
+    valid_status = None
+    if status and status.strip().lower() not in ("all", "none", ""):
+        try:
+            valid_status = ReportStatus(status.strip().lower())
+        except ValueError:
+            pass
+
+    valid_urgency = None
+    if urgency and urgency.strip().lower() not in ("all", "none", ""):
+        try:
+            valid_urgency = UrgencyLevel(urgency.strip().lower())
+        except ValueError:
+            pass
+
     filters = ReportFilterParams(
-        category=category,
-        status=status,
-        urgency=urgency,
+        category=valid_category,
+        status=valid_status,
+        urgency=valid_urgency,
         search=search,
         page=page,
         page_size=page_size

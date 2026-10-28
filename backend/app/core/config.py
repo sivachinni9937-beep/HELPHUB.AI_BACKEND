@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     
     # Google AI Studio / Cloud AI API Configuration (Backup - loaded from .env)
     GEMINI_API_KEY: str = ""
-    GEMINI_MODEL: str = "models/gemini-3.5-flash-lite"
+    GEMINI_MODEL: str = "models/gemma-4-26b-a4b-it"
     GEMINI_BASE_URL: str = "https://generativelanguage.googleapis.com/v1beta"
     AI_PROVIDER: str = "ollama"  # Prioritize local Ollama Gemma
     

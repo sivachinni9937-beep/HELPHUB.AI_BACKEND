@@ -4,8 +4,8 @@ from app.schemas.common import ReportCategory, UrgencyLevel
 
 
 class ReportStructureRequest(BaseModel):
-    description: str = Field(..., min_length=10, max_length=5000, description="Raw unstructured problem description")
-    preferred_language: Optional[str] = Field("en", pattern="^(en|hi|or)$")
+    description: str = Field(..., min_length=1, max_length=5000, description="Raw unstructured problem description")
+    preferred_language: Optional[str] = Field("en")
     context_location: Optional[str] = Field(None, max_length=200)
 
 
@@ -13,9 +13,9 @@ class ReportStructureResponse(BaseModel):
     suggested_title: str = Field(..., max_length=150)
     suggested_category: ReportCategory
     suggested_urgency: UrgencyLevel
-    urgency_reasoning: str = Field(..., max_length=300)
-    summary: str = Field(..., max_length=500)
-    detected_language: str = Field(..., pattern="^(en|hi|or|other)$")
+    urgency_reasoning: str = Field(..., max_length=500)
+    summary: str = Field(..., max_length=1000)
+    detected_language: str = Field("en")
     translations: Dict[str, str] = Field(default_factory=dict)
     recommended_next_steps: List[str] = Field(default_factory=list)
     is_advisory_only: bool = True
@@ -24,7 +24,7 @@ class ReportStructureResponse(BaseModel):
 
 class TranslationRequest(BaseModel):
     text: str = Field(..., min_length=1, max_length=5000)
-    target_language: str = Field(..., pattern="^(en|hi|or)$")
+    target_language: str = Field("en")
     source_language: Optional[str] = Field("auto")
 
 
@@ -56,8 +56,8 @@ class ComplaintLetterRequest(BaseModel):
     problem_description: str = Field(..., max_length=2000)
     location: str = Field(..., max_length=250)
     recipient_authority: Optional[str] = Field("Municipal Corporation / Ward Office", max_length=150)
-    language: str = Field("en", pattern="^(en|hi|or)$")
-    tone: Optional[str] = Field("polite_formal", pattern="^(polite_formal|urgent_official|constructive)$")
+    language: str = Field("en")
+    tone: Optional[str] = Field("polite_formal")
     sender_name: Optional[str] = Field(None, max_length=100)
 
 

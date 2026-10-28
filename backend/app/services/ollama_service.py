@@ -102,7 +102,8 @@ class OllamaService:
 
     async def _generate_completion(self, prompt: str, system: Optional[str] = None, format_json: bool = False) -> str:
         """
-        Calls Ollama (primary) or Google AI Studio (secondary) with automatic fallback.
+        Calls Ollama (primary: gemma4:latest, secondary: gemma3:1b) or Google AI Studio (fallback)
+        with automatic failover and reasoning extraction.
         """
         # 1. Try Local Ollama Runtime first
         if not settings.DEMO_MODE:
@@ -112,68 +113,83 @@ class OllamaService:
 
             for m in candidate_models:
                 try:
+                    full_prompt = f"{system}\n\n{prompt}" if system else prompt
                     payload: Dict[str, Any] = {
                         "model": m,
-                        "prompt": prompt,
+                        "prompt": full_prompt,
                         "stream": False,
                         "options": {
                             "temperature": 0.2,
                             "top_p": 0.9,
+                            "num_predict": 1024,
+                            "num_ctx": 2048,
                         }
                     }
-                    if system:
-                        payload["system"] = system
                     if format_json:
                         payload["format"] = "json"
 
-                    timeout_val = min(self.timeout, 45.0)
+                    # Gemma 4 (7.5B) on CPU takes ~20-50s with full reasoning; Gemma 3 (1B) takes ~8s
+                    timeout_val = min(self.timeout, 90.0) if "1b" not in m else 25.0
                     timeout_config = httpx.Timeout(timeout_val, connect=3.0)
                     async with httpx.AsyncClient(timeout=timeout_config) as client:
                         response = await client.post(f"{self.base_url}/api/generate", json=payload)
                         if response.status_code == 200:
                             data = response.json()
                             resp_text = data.get("response", "")
+                            # If response is empty because reasoning tokens consumed output or was in thinking
+                            if not resp_text.strip() and data.get("thinking"):
+                                resp_text = data.get("thinking", "")
                             if resp_text.strip():
                                 return resp_text
                 except Exception as e:
                     logger.warning(f"Ollama generation with {m} failed/timed out: {e}")
 
-        # 2. Try Google AI Studio (Gemini / Gemma Cloud)
+        # 2. Try Google AI Studio (Gemma 4 Cloud / Gemini)
         if self.gemini_key and not settings.DEMO_MODE:
-            try:
-                full_prompt = f"{system}\n\n{prompt}" if system else prompt
-                url = f"{self.gemini_base_url}/{self.gemini_model}:generateContent?key={self.gemini_key}"
-                
-                gen_config: Dict[str, Any] = {
-                    "temperature": 0.2,
-                    "topP": 0.9,
-                    "maxOutputTokens": 2048,
-                }
-                if format_json:
-                    gen_config["responseMimeType"] = "application/json"
+            cloud_candidates = [
+                self.gemini_model,
+                "models/gemma-4-26b-a4b-it",
+                "models/gemini-3.8-flash",
+                "models/gemini-2.5-pro",
+            ]
+            for c_model in cloud_candidates:
+                try:
+                    full_prompt = f"{system}\n\n{prompt}" if system else prompt
+                    url = f"{self.gemini_base_url}/{c_model}:generateContent?key={self.gemini_key}"
+                    
+                    gen_config: Dict[str, Any] = {
+                        "temperature": 0.2,
+                        "topP": 0.9,
+                        "maxOutputTokens": 2048,
+                    }
+                    if format_json:
+                        gen_config["responseMimeType"] = "application/json"
 
-                payload = {
-                    "contents": [{"parts": [{"text": full_prompt}]}],
-                    "generationConfig": gen_config
-                }
+                    payload = {
+                        "contents": [{"parts": [{"text": full_prompt}]}],
+                        "generationConfig": gen_config
+                    }
 
-                timeout_config = httpx.Timeout(min(self.timeout, 30.0), connect=5.0)
-                async with httpx.AsyncClient(timeout=timeout_config) as client:
-                    response = await client.post(url, json=payload)
-                    response.raise_for_status()
-                    data = response.json()
-                    candidates = data.get("candidates", [])
-                    if candidates and "content" in candidates[0]:
-                        parts = candidates[0]["content"].get("parts", [])
-                        if parts and "text" in parts[0]:
-                            return parts[0]["text"]
-            except Exception as e:
-                logger.warning(f"Google AI Studio request error: {e}. Falling back.")
+                    timeout_config = httpx.Timeout(min(self.timeout, 25.0), connect=4.0)
+                    async with httpx.AsyncClient(timeout=timeout_config) as client:
+                        response = await client.post(url, json=payload)
+                        if response.status_code == 200:
+                            data = response.json()
+                            candidates = data.get("candidates", [])
+                            if candidates and "content" in candidates[0]:
+                                parts = candidates[0]["content"].get("parts", [])
+                                if parts and "text" in parts[0]:
+                                    return parts[0]["text"]
+                except Exception as e:
+                    logger.warning(f"Google AI Studio request error for {c_model}: {e}")
 
         raise httpx.ConnectError("All AI endpoints unavailable; triggering fallback pipeline")
 
     def _extract_json(self, text: str) -> Dict[str, Any]:
         """Safely extracts JSON from model text, handling markdown blocks and reasoning."""
+        if not text:
+            raise ValueError("Empty text provided for JSON extraction")
+
         # 1. Try direct parse
         try:
             return json.loads(text.strip())
@@ -199,10 +215,16 @@ class OllamaService:
         start = text.find("{")
         end = text.rfind("}")
         if start != -1 and end != -1 and end > start:
+            candidate = text[start:end + 1]
             try:
-                return json.loads(text[start:end + 1])
+                return json.loads(candidate)
             except Exception:
-                pass
+                # Try cleaning common trailing commas
+                clean = re.sub(r",\s*([\]}])", r"\1", candidate)
+                try:
+                    return json.loads(clean)
+                except Exception:
+                    pass
 
         raise ValueError("Could not parse valid JSON from AI response")
 
@@ -497,7 +519,7 @@ class OllamaService:
                     if "data:" in parts[0] and ";" in parts[0]:
                         mime = parts[0].split(";")[0].replace("data:", "")
 
-                url = f"{self.gemini_base_url}/models/gemini-3.5-flash-lite:generateContent?key={self.gemini_key}"
+                url = f"{self.gemini_base_url}/models/gemini-3.8-flash:generateContent?key={self.gemini_key}"
                 prompt = (
                     "You are a helpful civic assistant. Analyze this community photo for an issue report. "
                     "Return strict JSON with keys:\n"
@@ -544,7 +566,7 @@ class OllamaService:
                             confidence_note=str(parsed.get("confidence_note", "Visual analysis based on provided photograph.")),
                             uncertainty_disclaimer="AI image analysis is advisory and cautious. It does not verify official violations or structural safety.",
                             is_supported=True,
-                            model_identifier="models/gemini-3.5-flash-lite"
+                            model_identifier="models/gemini-3.8-flash"
                         )
             except Exception as e:
                 logger.warning(f"Gemini image analysis error: {e}. Falling back to default advisory response.")
